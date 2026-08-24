@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Scheduler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-submit {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th { background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+
+    <h2>📅 Appointment Scheduler with Reminders</h2>
+
+    <div class="card">
+        <h3>Book an Appointment</h3>
+        <form id="appointmentForm">
+            <input type="text" id="name" placeholder="Full Name" required>
+            <input type="email" id="email" placeholder="Email Address" required>
+            <input type="date" id="date" required>
+            <input type="time" id="time" required>
+            <input type="text" id="reason" placeholder="Reason for Visit" required>
+            <button type="submit" class="btn-submit">Schedule Appointment</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Scheduled Appointments</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Reason</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="appointmentList"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/appointments";
+
+        async function fetchAppointments() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            const list = document.getElementById("appointmentList");
+            list.innerHTML = "";
+
+            data.appointments.forEach(app => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${app.id}</td>
+                        <td>${app.name}</td>
+                        <td>${app.email}</td>
+                        <td>${app.date}</td>
+                        <td>${app.time}</td>
+                        <td>${app.reason}</td>
+                        <td>
+                            <button class="btn-delete" onclick="deleteAppointment(${app.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function deleteAppointment(id) {
+            if (confirm(`Delete appointment #${id}?`)) {
+                await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+                fetchAppointments();
+            }
+        }
+
+        document.getElementById("appointmentForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const appointment = {
+                name: document.getElementById("name").value,
+                email: document.getElementById("email").value,
+                date: document.getElementById("date").value,
+                time: document.getElementById("time").value,
+                reason: document.getElementById("reason").value
+            };
+
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(appointment)
+            });
+
+            document.getElementById("appointmentForm").reset();
+            fetchAppointments();
+        });
+
+        fetchAppointments();
+    </script>
+</body>
+</html>
